@@ -1,0 +1,183 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>Illyriad | Battle calculator</title>
+<style type="text/css">
+.winner, .true {
+	background-color: #00ff00;
+}
+.loser, .false {
+	background-color: #ff0000;
+}
+#testresult table tbody tr td {
+	vertical-align: top;
+}
+fieldset {
+	display: inline-block;
+	vertical-align: top;
+}
+</style>
+<script type="text/javascript" src="jquery-1.7.1.min.js"></script>
+<script type="text/javascript" src="illyriad.js"></script>
+<script type="text/javascript">
+$(document).ready(function (){
+	var testlist = $('<select><option value="">Select Test input</option></select>');
+	$.get('tests/', function(data){
+		$(data).find('a').each(function(i, a){
+			var m = /\/([a-z]+[0-9]+)\.txt$/.exec(a);
+			if ( m != null && m[1] != '' ){
+				testlist.append($('<option value="'+m[1]+'">'+m[1]+'</option>'));
+			}
+		});
+	});
+	testlist.change(function(){
+		getTest($(this).val());
+		});
+	testlist.keyup(function(){
+		getTest($(this).val());
+		});
+
+	$('#testlist').empty().append(testlist);
+	writeStuff();
+	calculate();
+});
+function getTest(test, sync){
+	if ( sync == null ){ sync = false;}
+	$.ajax(
+		{url: 'tests/'+test+'.txt',
+		async: !sync,
+		success: function(data){
+				$('#input').html(data);
+				$('#process').click();
+			}
+		}
+		);
+}
+var commanders = new Array();
+var attackers = new Army('Dwarves');
+attackers.addDivision(new Division());
+var defenders = new Army('Aligators');
+defenders.addDivision(new Division());
+
+var terrain = 'Shallow Salt Water';
+
+function writeAttackers(){
+	var armyElement = $('#armya').empty();
+	writeArmy(armyElement, $('#racea').val(), attackers, 'a');
+}
+function writeDefenders(){
+	var armyElement = $('#armyb').empty();
+	writeArmy(armyElement, $('#raceb').val(), defenders, 'd');
+}
+
+function writeStuff(){
+
+	$('#terrain').empty().append(newTerrainSelectbox('t1', terrain, calculate));
+
+	$('#race1').empty().append(
+		newRaceSelectbox('racea', attackers['race'], function(){
+			writeAttackers();
+			calculate();
+		})
+	);
+	writeAttackers();
+
+	$('#race2').empty().append(
+		newRaceSelectbox('raceb', defenders['race'], function(){
+			writeDefenders();
+			calculate();
+		})
+	);
+	writeDefenders();
+}
+</script>
+<script type="text/javascript" src="testing.min.js"></script>
+</head>
+<body>
+<fieldset><legend>Input</legend>
+<div id="testlist"></div>
+<textarea cols="100" rows="10" id="input">
+Paste stuff in here, like combat reports and scout reports, to quickly set up some army/armies.
+Prepend combat reports with commander stats, to quickly incorporate that info as well. In case of multiple commanders, please use the same order as in the combat reports, or things will be mismatched.
+
+Enjoy !
+
+Stardance.
+
+Best NPCs to attack for XP:
+wild dogs (26), giant rats (38), golden monkeys (46), giant beetles (47), wolves (48)
+</textarea><br/>
+<input type="button" onclick="processReport($('#input').val());" id="process" value="Process" />
+<input type="button" onclick="$('#input').val('');" value="Clear" />
+</fieldset>
+<fieldset><legend>Test Results</legend><div id="testresult"><table><tbody><tr></tr></tbody></table></div></fieldset>
+<br/>
+
+<fieldset><legend>Battle</legend>
+<p><b>Terrain : </b><span id="terrain"></span></p>
+<p><b>Wall level: </b><select id="wall" onchange="calculate();" onkeyup="calculate();">
+<option value="1">0 (0%)</option>
+<option value="1.02">1 (2%)</option>
+<option value="1.04">2 (4%)</option>
+<option value="1.07">3 (7%)</option>
+<option value="1.10">4 10%)</option>
+<option value="1.14">5 (14%)</option>
+<option value="1.18">6 (18%)</option>
+<option value="1.22">7 (22%)</option>
+<option value="1.27">8 (27%)</option>
+<option value="1.32">9 (32%)</option>
+<option value="1.37">10 (37%)</option>
+<option value="1.43">11 (43%)</option>
+<option value="1.49">12 (49%)</option>
+<option value="1.55">13 (55%)</option>
+<option value="1.62">14 (62%)</option>
+<option value="1.69">15 (69%)</option>
+<option value="1.76">16 (76%)</option>
+<option value="1.84">17 (84%)</option>
+<option value="1.92">18 (92%)</option>
+<option value="1.00">19 (100%)</option>
+<option value="1.15">20 (115%)</option>
+</select></p>
+
+<fieldset id="attacking"><legend>Attacking Force</legend>
+  <span id="race1"></span>
+  <span id="armya"></span>
+  <table border="0">
+  <tr><td>
+    <table border="0">
+    <tr><td>Spear attack   </td><td><input type="text" id="spearattack" size="5" disabled="disabled" /></td></tr>
+    <tr><td>Ranged attack  </td><td><input type="text" id="rangeattack" size="5" disabled="disabled" /></td></tr>
+    <tr><td>Sword attack   </td><td><input type="text" id="swordattack" size="5" disabled="disabled" /></td></tr>
+    <tr><td>Cavalry attack </td><td><input type="text" id="cavalattack" size="5" disabled="disabled" /></td></tr>
+    <tr><td><b>Total attack</b></td><td><input type="text" id="totalattack" size="5" disabled="disabled" /></td></tr>
+    </table>
+  </td><td>
+    <table border="0">
+    <tr><td>total XP of casualties</td><td><input type="text" id="attackingXP" size="5" disabled="disabled" /></td></tr>
+    </table>
+  </td></tr>
+  </table>
+</fieldset>
+
+<fieldset id="defending"><legend>Defending Force</legend>
+   <span id="race2"></span>
+   <span id="armyb"></span>
+  <table border="0">
+  <tr><td><table border="0">
+    <tr><td>Spear def   </td><td><input type="text" id="speardef" size="5" disabled="disabled" /></td></tr>
+    <tr><td>Ranged def  </td><td><input type="text" id="rangedef" size="5" disabled="disabled" /></td></tr>
+    <tr><td>Sword def   </td><td><input type="text" id="sworddef" size="5" disabled="disabled" /></td></tr>
+    <tr><td>Cavalry def </td><td><input type="text" id="cavaldef" size="5" disabled="disabled" /></td></tr>
+    <tr><td><b>Total def</b></td><td><input type="text" id="totaldef" size="5" disabled="disabled" /></td></tr>
+    </table>
+    </td><td>
+    <table border="0">
+    <tr><td>total XP of casualties</td><td><input type="text" id="defendingXP" size="5" disabled="disabled" /></td></tr>
+    </table>
+    </td></tr>
+  </table>
+</fieldset>
+
+</fieldset>
+</body>
+</html>
